@@ -23,7 +23,7 @@
       <el-table-column fixed="right" label="操作" width="200">
         <template #default="scope">
           <el-button type="primary" @click="handleEdit(scope.row)" >编辑</el-button>
-          <el-popconfirm title="确认删除吗?">
+          <el-popconfirm title="确认删除吗?" @confirm="handleDelete(scope.row.id)">
             <template #reference>
               <el-button type="danger" >删除</el-button>
             </template>
@@ -33,11 +33,11 @@
     </el-table>
 <!--    分页-->
     <div class="demo-pagination-block">
-      <span class="demonstration">Jump to</span>
       <el-pagination
           v-model:currentPage="currentPage"
+          :page-sizes="[5, 10, 15, 20]"
           :page-size="pageSize"
-          layout="total,prev, pager, next, jumper"
+          layout="total, sizes, prev, pager, next, jumper"
           :total="total"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
@@ -89,7 +89,7 @@ export default {
       form:{},
       search:'',
       currentPage:1,
-      pageSize:10,
+      pageSize:5,
       total:100,
       dialogVisible:false,//新增按钮的弹出框默认为false
       tableData:[]
@@ -102,7 +102,7 @@ export default {
     load(){
       request.get("/user",{
         params:{
-          pageNum:this.currentPage,
+          pageNum:this.pageNum,
           pageSize:this.pageSize,
           search:this.search,
         }
@@ -158,14 +158,35 @@ export default {
 
     },
     handleEdit(row){
+      //点击编辑弹出弹窗
       this.form=JSON.parse(JSON.stringify(row))//深拷贝
       this.dialogVisible=true
     },
-    handleSizeChange(){
-
+    handleSizeChange(pageSize){
+      this.pageSize=pageSize
+      this.load()
     },
-    handleCurrentChange(){
-
+    handleCurrentChange(pageNum){
+      //改变页码时触发，包括手动输入页码和点击下一页
+      this.pageNum=pageNum
+      this.load()
+    },
+    handleDelete(id){
+      console.log(id)
+      request.delete("/user/"+id).then(res=>{
+        if(res.code==='0'){
+          ElMessage({
+            type:"success",
+            message:"删除用户成功"
+          })
+        }else {
+          ElMessage({
+            type:"error",
+            message:res.msg,
+          })
+        }
+        this.load()//刷新数据
+      })
     }
   },
 
